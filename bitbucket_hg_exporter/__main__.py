@@ -99,7 +99,7 @@ def bb_query_api(endpoint, auth, params=None):
     response = None
     while retry:
         try:
-            response = requests.get(endpoint, params=orig_params, auth=auth)
+            response = requests.get(endpoint, params=orig_params)
             if response.status_code == 429:
                 retry_count += 1
                 if retry_count%5 == 4:
@@ -306,7 +306,7 @@ class MigrationProject(object):
             first_run = False
 
         # make sure we have a password/token or ask for it
-        self.__get_password('bitbucket', self.__settings['master_bitbucket_username'], silent=False)
+        #self.__get_password('bitbucket', self.__settings['master_bitbucket_username'], silent=False)
 
         self.__confirm_project_settings(load=True)
 
@@ -391,7 +391,7 @@ class MigrationProject(object):
                             break
 
             owner = self.__settings['bitbucket_repo_owner']
-            auth = (self.__settings['master_bitbucket_username'], self.__get_password('bitbucket', self.__settings['master_bitbucket_username']))
+            auth = (self.__settings['master_bitbucket_username'], '')
 
             # this is a new setting, so people upgrading need to have it set to the prior behaviour
             if self.__settings['github_import_forks_to'] is None:
@@ -450,7 +450,7 @@ class MigrationProject(object):
             if not self.__settings['bitbucket_api_download_complete']:
                 import colorama
                 colorama.init()
-                auth_list = [auth] + [(user, self.__get_password('bitbucket', user)) for user in self.__settings['bitbucket_additional_users']]
+                auth_list = [auth] + [(user, '') for user in self.__settings['bitbucket_additional_users']]
                 message_queue = queue.Queue()
                 subset = [[] for _ in auth_list]
                 threads = {}
@@ -1455,7 +1455,7 @@ class MigrationProject(object):
             raise RuntimeError('Unknown option selected')
 
         # Get a list of all hg repositories for this user/team and filter by project if+ relevant
-        auth = (self.__settings['master_bitbucket_username'], self.__get_password('bitbucket', self.__settings['master_bitbucket_username']))
+        auth = (self.__settings['master_bitbucket_username'], '')
         status, json_response = bbapi_json('repositories/{}'.format(self.__settings['bitbucket_repo_owner']), auth, {'q':'scm="hg"', 'pagelen':100})
 
         bb_repositories = []
@@ -1731,7 +1731,7 @@ class MigrationProject(object):
         username = q.text("What is your BitBucket username?", default=username).ask()
 
         # Get password/token
-        self.__get_password('bitbucket', username, silent=False, force_new_password=force_new_password)
+        #self.__get_password('bitbucket', username, silent=False, force_new_password=force_new_password)
         
         return username
 
