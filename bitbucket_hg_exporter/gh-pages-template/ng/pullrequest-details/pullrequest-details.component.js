@@ -23,7 +23,7 @@ angular.
               var p1 = $http.get(self.pr['destination']['commit']['links']['self']['href']).then(function(response) {
                 self.dest_commit = response.data;
               });
-              var p2 = $http.get(self.pr['merge_commit']['links']['self']['href']).then(function(response) {
+              var p2 = $http.get(self.pr['source']['commit']['links']['self']['href']).then(function(response) {
                 self.merge_commit = response.data;
               });
               Promise.all([p1, p2]).then(function(){
