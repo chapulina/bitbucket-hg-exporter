@@ -878,7 +878,6 @@ class MigrationProject(object):
 
                     # load the top level JSON file for each project as we will use it more than once
                     data_path = os.path.join(self.__settings['project_path'], 'gh-pages', 'data', 'repositories', *repository['full_name'].split('/'))
-                    pull_request_path = None
                     with open(data_path + '.json', 'r') as g:
                         top_level_repo_data[repository['full_name']] = json.load(g)
 
@@ -924,20 +923,20 @@ class MigrationProject(object):
 
                     # find location of commit list
                     if "links" in repo_data and "commits" in repo_data['links'] and 'href' in repo_data['links']['commits']:
-                        pull_request_path = os.path.join(self.__settings['project_path'], 'gh-pages', *repo_data['links']['commits']['href'].split('/'))
+                        commits_path = os.path.join(self.__settings['project_path'], 'gh-pages', *repo_data['links']['commits']['href'].split('/'))
 
                     # open that file, iterate over each commit, and find links to comments
                     # TODO: rename variables
-                    while pull_request_path is not None:
-                        with open(pull_request_path, 'r') as f:
+                    while commits_path is not None:
+                        with open(commits_path, 'r') as f:
                             pull_requests_data = json.load(f)
                             for pull_request in pull_requests_data['values']:
                                 if 'links' in pull_request and 'comments' in pull_request['links'] and 'href' in pull_request['links']['comments']:
                                     comment_paths.append(os.path.join(self.__settings['project_path'], 'gh-pages', *pull_request['links']['comments']['href'].split('/')))
                             if "next" in pull_requests_data:
-                                pull_request_path = os.path.join(self.__settings['project_path'], 'gh-pages',  *pull_requests_data['next'].split('/'))
+                                commits_path = os.path.join(self.__settings['project_path'], 'gh-pages',  *pull_requests_data['next'].split('/'))
                             else:
-                                pull_request_path = None
+                                commits_path = None
 
                     # Note this code now handles both pull requests and commit comments (despite the variable names)
                     for pull_request_file in comment_paths:
