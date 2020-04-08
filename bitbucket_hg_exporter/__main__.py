@@ -237,6 +237,7 @@ class MigrationProject(object):
             'bb_gh_user_mapping': {},
             'github_import_issues': True,
             'github_publish_pages': True,
+            'github_pages_owner': '',
             'github_pages_repo_name': '',
             'github_pages_url_type': 0,
             'github_pages_custom_url': '',
@@ -1147,7 +1148,7 @@ class MigrationProject(object):
             if self.__settings['import_to_github'] and self.__settings['github_publish_pages']:
                 print('Uploading the archive of BitBucket data to GitHub and activating GitHub pages')
                 clone_dest = os.path.join(self.__settings['project_path'], 'gh-pages')
-                clone_url = 'https://github.com/{owner}/{repo}'.format(owner=self.__settings['github_owner'], repo=self.__settings['github_pages_repo_name'])
+                clone_url = 'https://github.com/{owner}/{repo}'.format(owner=self.__settings['github_pages_owner'], repo=self.__settings['github_pages_repo_name'])
                 if not os.path.exists(os.path.join(clone_dest, '.git', 'index')):
                     # create repository
                     p=subprocess.Popen(['git', 'init'], cwd=clone_dest)
@@ -1193,7 +1194,7 @@ class MigrationProject(object):
                     "has_projects": False,
                     'website': self.get_github_pages_url(),
                 }
-                response = self.create_or_get_github_repository(self.__settings['github_owner'], self.__settings['github_pages_repo_name'], gh_pages_repo_details, github_auth)
+                response = self.create_or_get_github_repository(self.__settings['github_pages_owner'], self.__settings['github_pages_repo_name'], gh_pages_repo_details, github_auth)
 
                 # Push to GitHub
                 p=subprocess.Popen(['git', 'push', 'origin', 'master'], cwd=clone_dest)
@@ -1212,14 +1213,14 @@ class MigrationProject(object):
                     }
                 }
                 response = requests.post(
-                    'https://api.github.com/repos/{owner}/{repo}/pages'.format(owner=self.__settings['github_owner'], repo=self.__settings['github_pages_repo_name']),  
+                    'https://api.github.com/repos/{owner}/{repo}/pages'.format(owner=self.__settings['github_pages_owner'], repo=self.__settings['github_pages_repo_name']),
                     auth=github_auth, 
                     headers=github_headers,
                     json=pages_data
                 )
                 # Only error on response codes that are not success or "already enabled"
                 if response.status_code != 201 and response.status_code != 409:
-                    print('Failed to enable GitHub pages on {}/{} (for the BitBucket archive). Response code was: {}'.format(self.__settings['github_owner'], self.__settings['github_pages_repo_name'], response.status_code))
+                    print('Failed to enable GitHub pages on {}/{} (for the BitBucket archive). Response code was: {}'.format(self.__settings['github_pages_owner'], self.__settings['github_pages_repo_name'], response.status_code))
                     print(response.json())
                     sys.exit(1)
 
@@ -1235,12 +1236,12 @@ class MigrationProject(object):
                         "source": "master"
                     }
                 response = requests.put(
-                    'https://api.github.com/repos/{owner}/{repo}/pages'.format(owner=self.__settings['github_owner'], repo=self.__settings['github_pages_repo_name']),  
+                    'https://api.github.com/repos/{owner}/{repo}/pages'.format(owner=self.__settings['github_pages_owner'], repo=self.__settings['github_pages_repo_name']),
                     auth=github_auth, 
                     json=pages_data
                 )
                 if response.status_code != 204:
-                    print('Failed to update custom domain to "{}" on {}/{} (for the BitBucket archive). Response code was: {}'.format(self.__settings['github_pages_custom_url'], self.__settings['github_owner'], self.__settings['github_pages_repo_name'], response.status_code))
+                    print('Failed to update custom domain to "{}" on {}/{} (for the BitBucket archive). Response code was: {}'.format(self.__settings['github_pages_custom_url'], self.__settings['github_pages_owner'], self.__settings['github_pages_repo_name'], response.status_code))
                     print(response.json())
                     sys.exit(1)
                 print('done!')
@@ -1359,7 +1360,7 @@ class MigrationProject(object):
     def get_github_pages_url(self, prefix=True, https=True):
         url = 'https://' if prefix and https else ('http://' if prefix else '')
         if self.__settings['github_pages_url_type'] == 0:
-            url += '{}.github.io/{}'.format(str(self.__settings['github_owner']), str(self.__settings['github_pages_repo_name']))
+            url += '{}.github.io/{}'.format(str(self.__settings['github_pages_owner']), str(self.__settings['github_pages_repo_name']))
         elif self.__settings['github_pages_url_type'] == 1:
             url += '{}'.format(str(self.__settings['github_pages_custom_url']))
         elif self.__settings['github_pages_url_type'] == 2:
@@ -1551,6 +1552,17 @@ class MigrationProject(object):
             self.__settings['github_publish_pages'] = q.confirm('Publish BitBucket backup on GitHub pages (with links to current GitHub repository)?', default=self.__settings['github_publish_pages']).ask()
             if self.__settings['github_publish_pages']:
                 while True:
+                    self.__settings['github_pages_owner'] = q.text('Enter the owner name where you would like to publish the backup:', default=self.__settings['github_owner']).ask()
+                    if '/' in self.__settings['github_pages_owner']:
+                        print('ERROR: owner names cannot have "/" characters in them. Make sure you are specifying the owner name without the /repository_name')
+                    elif self.__settings['github_pages_owner'] is None:
+                        print('Somehow you have specified type "None" for the owner name which is not allowed')
+                        sys.exit(1)
+                    elif self.__settings['github_pages_owner'] == '':
+                        print('ERROR: You cannot specify an empty owner name')
+                    else:
+                        break
+                while True:
                     self.__settings['github_pages_repo_name'] = q.text('Enter the repository name where you would like to publish the backup:', default=self.__settings['github_pages_repo_name']).ask()
                     if '/' in self.__settings['github_pages_repo_name']:
                         print('ERROR: repository names cannot have "/" characters in them. Make sure you are specifying the name without the GitHub user/org')
@@ -1611,6 +1623,7 @@ class MigrationProject(object):
                 'bb_gh_user_mapping': {},
                 'github_import_issues': False,
                 'github_publish_pages': False,
+                'github_pages_owner': '',
                 'github_pages_repo_name': '',
                 'github_pages_url_type': 0,
                 'github_pages_custom_url': '',
@@ -1704,6 +1717,7 @@ class MigrationProject(object):
             print('        Import issues to GitHub issue tracker: {}'.format(str(self.__settings['github_import_issues'])))
             print('        Publish BitBucket backup on GitHub pages: {}'.format(str(self.__settings['github_publish_pages'])))
             if self.__settings['github_publish_pages']:
+                print('            Repository owner for backup: {}'.format(str(self.__settings['github_pages_owner'])))
                 print('            Repository name for backup: {}'.format(str(self.__settings['github_pages_repo_name'])))
                 print('            URL for backup: {}'.format(self.get_github_pages_url()))
             print('        Rewrite custom set of URLs in issues/comments/etc: {}'.format(str(self.__settings['github_rewrite_additional_URLs'])))

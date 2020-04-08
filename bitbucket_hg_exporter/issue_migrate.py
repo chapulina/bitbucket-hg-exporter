@@ -308,7 +308,7 @@ def format_issue_body(issue, attachments, options):
 
     if options.settings['github_publish_pages']:
         # repo URL (for attachment links)
-        archive_url = 'https://{owner}.github.io/{repo}'.format(owner=options.settings['github_owner'], repo=options.settings['github_pages_repo_name'])
+        archive_url = 'https://{owner}.github.io/{repo}'.format(owner=options.settings['github_pages_owner'], repo=options.settings['github_pages_repo_name'])
         # link to archived attachments
         attach_names = ["[{name}]({archive_url}/{url})".format(name=val['name'], url=val['links']['self']['href'][0], archive_url=archive_url) for val in attachments]
         attach_names = ", ".join(attach_names)
@@ -373,7 +373,7 @@ def apply_conversion(content, options, issue_id):
 
     image_paths = image_regex.findall(content)
     if options.settings['github_publish_pages']:
-        archive_url = 'https://{owner}.github.io/{repo}'.format(owner=options.settings['github_owner'], repo=options.settings['github_pages_repo_name'])
+        archive_url = 'https://{owner}.github.io/{repo}'.format(owner=options.settings['github_pages_owner'], repo=options.settings['github_pages_repo_name'])
         for match in image_paths:
             if os.path.exists(os.path.join(options.settings['project_path'], 'gh-pages', *match.split('/'))):
                 content = content.replace('![]({})'.format(match), '![]({archive_url}/{match})'.format(match=urllib.parse.quote(match), archive_url=archive_url))
